@@ -25,8 +25,12 @@ class FirestoreDurabilityEngine implements DurabilityEngine {
       const message: Message = {
         id: document.id,
         body: document.get("body"),
-        expiry: document.get("expiry") ? document.get("expiry").toDate() : undefined,
-        restore: document.get("restore") ? document.get("restore").toDate() : undefined,
+        expiry: document.get("expiry")
+          ? document.get("expiry").toDate()
+          : undefined,
+        restore: document.get("restore")
+          ? document.get("restore").toDate()
+          : undefined,
       };
       const queue = document.get("queue");
       if (queue in queueMap) {

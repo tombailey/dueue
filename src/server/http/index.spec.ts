@@ -78,13 +78,11 @@ describe("Test dueue HTTP API", () => {
       .set("Content-type", "application/json")
       .send({
         message,
-        expiry: new Date().getTime() + expiresAfter
+        expiry: new Date().getTime() + expiresAfter,
       });
     expect(publishResponse.status).toEqual(204);
 
-    const receiveResponse = await request(expressApp).get(
-      "/dueue/expiry-test"
-    );
+    const receiveResponse = await request(expressApp).get("/dueue/expiry-test");
     expect(receiveResponse.status).toEqual(200);
     expect(receiveResponse.body.message).toEqual(message);
 
@@ -122,7 +120,8 @@ describe("Test dueue HTTP API", () => {
       "/dueue/unacknowledged-test"
     );
     expect(receiveAfterUnacknowledgedResponse.status).toEqual(200);
-    const receiveAfterUnacknowledgedId = receiveAfterUnacknowledgedResponse.body.id;
+    const receiveAfterUnacknowledgedId =
+      receiveAfterUnacknowledgedResponse.body.id;
     expect(receiveAfterUnacknowledgedId).toEqual(id);
   });
 

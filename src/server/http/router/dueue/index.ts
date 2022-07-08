@@ -44,10 +44,8 @@ export default class DueueRouter {
       const acknowledgementDeadline = request.query.acknowledgementDeadline;
       if (
         acknowledgementDeadline !== undefined &&
-        (
-          typeof acknowledgementDeadline !== "string" ||
-          !/^\d+$/.test(acknowledgementDeadline)
-        )
+        (typeof acknowledgementDeadline !== "string" ||
+          !/^\d+$/.test(acknowledgementDeadline))
       ) {
         response.status(400).json({
           message:

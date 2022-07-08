@@ -40,7 +40,10 @@ export default class DueueController {
             console.warn("Failed to delete expired message.");
           }
           messages.splice(index, 1);
-        } else if (message.restore === undefined || message.restore.getTime() <= Date.now()) {
+        } else if (
+          message.restore === undefined ||
+          message.restore.getTime() <= Date.now()
+        ) {
           await this.durabilityEngine.updateMessage(queueName, message.id, {
             ...message,
             restore: acknowledgementDeadline,
