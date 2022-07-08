@@ -1,6 +1,7 @@
 import getPostgresDurabilityEngine, { POSTGRES_DURABILITY_ENGINE, } from "../engine/postgres"
 import Message from "../entity/message"
 import getMemoryDurabilityEngine, { MEMORY_DURABILITY_ENGINE } from "./memory"
+import getFirestoreDurabilityEngine, { FIRESTORE_DURABILITY_ENGINE, } from "./firestore"
 
 export const DURABILITY_ENGINE = "DURABILITY_ENGINE";
 
@@ -23,6 +24,8 @@ export async function getDurabilityEngine(
   engine: String = (process.env[DURABILITY_ENGINE] ?? "")?.toLowerCase()
 ): Promise<DurabilityEngine> {
   switch (engine) {
+    case FIRESTORE_DURABILITY_ENGINE:
+      return getFirestoreDurabilityEngine();
     case POSTGRES_DURABILITY_ENGINE:
       return getPostgresDurabilityEngine();
     case MEMORY_DURABILITY_ENGINE:
