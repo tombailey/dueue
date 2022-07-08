@@ -3,6 +3,7 @@ import { getDurabilityEngine } from "../../engine"
 import AsyncLock from "../../lock/asyncLock"
 import DueueController from "../../controller/dueue"
 import request from "supertest"
+import { setTimeout } from "timers/promises"
 
 describe("Test dueue HTTP API", () => {
   let expressApp: Express.Application;
@@ -69,7 +70,61 @@ describe("Test dueue HTTP API", () => {
     expect(receiveAfterAcknowledgeResponse.status).toEqual(404);
   });
 
-  // TODO: test expiry and acknowledgement deadline
+  it("should expire messages", async () => {
+    const message = "test";
+    const expiresAfter = 3 * 1000;
+    const publishResponse = await request(expressApp)
+      .post("/dueue/expiry-test?acknowledgementDeadline=0")
+      .set("Content-type", "application/json")
+      .send({
+        message,
+        expiry: new Date().getTime() + expiresAfter
+      });
+    expect(publishResponse.status).toEqual(204);
+
+    const receiveResponse = await request(expressApp).get(
+      "/dueue/expiry-test"
+    );
+    expect(receiveResponse.status).toEqual(200);
+    expect(receiveResponse.body.message).toEqual(message);
+
+    const id = receiveResponse.body.id;
+    expect(id).toBeDefined();
+
+    await setTimeout(expiresAfter);
+
+    const receiveAfterExpiryResponse = await request(expressApp).get(
+      "/dueue/expiry-test"
+    );
+    expect(receiveAfterExpiryResponse.status).toEqual(404);
+  });
+
+  it("should restore unacknowledged messages", async () => {
+    const message = "test";
+    const publishResponse = await request(expressApp)
+      .post("/dueue/unacknowledged-test")
+      .set("Content-type", "application/json")
+      .send({
+        message,
+      });
+    expect(publishResponse.status).toEqual(204);
+
+    const receiveResponse = await request(expressApp).get(
+      "/dueue/unacknowledged-test?acknowledgementDeadline=0"
+    );
+    expect(receiveResponse.status).toEqual(200);
+    expect(receiveResponse.body.message).toEqual(message);
+
+    const id = receiveResponse.body.id;
+    expect(id).toBeDefined();
+
+    const receiveAfterUnacknowledgedResponse = await request(expressApp).get(
+      "/dueue/unacknowledged-test"
+    );
+    expect(receiveAfterUnacknowledgedResponse.status).toEqual(200);
+    const receiveAfterUnacknowledgedId = receiveAfterUnacknowledgedResponse.body.id;
+    expect(receiveAfterUnacknowledgedId).toEqual(id);
+  });
 
   async function createExpressApp() {
     const durabilityEngine = await getDurabilityEngine("memory");

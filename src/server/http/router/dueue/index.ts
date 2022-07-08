@@ -44,7 +44,10 @@ export default class DueueRouter {
       const acknowledgementDeadline = request.query.acknowledgementDeadline;
       if (
         acknowledgementDeadline !== undefined &&
-        typeof acknowledgementDeadline !== "number"
+        (
+          typeof acknowledgementDeadline !== "string" ||
+          !/^\d+$/.test(acknowledgementDeadline)
+        )
       ) {
         response.status(400).json({
           message:
@@ -54,8 +57,8 @@ export default class DueueRouter {
 
       const message = await this.dueueController.receiveOne(
         queueName,
-        typeof acknowledgementDeadline === "number"
-          ? new Date(acknowledgementDeadline * 1000)
+        typeof acknowledgementDeadline === "string"
+          ? new Date(Number(acknowledgementDeadline) * 1000)
           : undefined
       );
       if (message === null) {
