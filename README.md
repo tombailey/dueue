@@ -2,12 +2,12 @@
 
 ## Introduction
 
-This is a super simple and not very feature-complete durable queue (dueue). Right now, the only supported durability engines are in-memory and postgres.
+This is a super simple and not very feature-complete durable queue (dueue).
 
 ## Getting started
 
 ```dockerfile
-FROM tombailey256/dueue:0.1.0
+FROM tombailey256/dueue:0.2.0
 
 ENV DURABILITY_ENGINE="postgres"
 ENV POSTGRES_HOST="postgres"
@@ -49,6 +49,39 @@ $> curl -XDELETE localhost/dueue/myQueue/ae41344a-888e-4608-8870-2a4e57b955d6
 ## Durability
 
 Dueue is able to survive crashes, node failure, etc by storing messages using a durability engine.
+
+The following durability engines are supported:
+
+### In-memory
+
+Stores messages in-memory. There is no durability if dueue is restarted or crashes. Configured with the following environment variables:
+
+```sh
+export DURABILITY_ENGINE="memory"
+```
+
+### Firestore
+
+Stores messages using a [Firestore collection](https://firebase.google.com/docs/firestore/data-model). Configured with the following environment variables:
+
+```sh
+export DURABILITY_ENGINE="firestore"
+export FIRESTORE_CREDENTIALS_FILE="/app/firebase-admin-sdk-service-account-credentials.json"
+export FIRESTORE_COLLECTION="dueue"
+```
+
+### PostgreSQL
+
+Stores messages using a table (named dueue). Configured with the following environment variables:
+
+```sh
+export DURABILITY_ENGINE="postgres"
+export POSTGRES_HOST="postgres"
+export POSTGRES_PORT=5432
+export POSTGRES_USER="user"
+export POSTGRES_PASSWORD="password"
+export POSTGRES_DATABASE="database"
+```
 
 Note, if the durability engine is unavailable dueue operations (even receive) will fail.
 
