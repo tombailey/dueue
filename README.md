@@ -7,7 +7,7 @@ This is a super simple and not very feature-complete durable queue (dueue).
 ## Getting started
 
 ```dockerfile
-FROM tombailey256/dueue:0.2.0
+FROM tombailey256/dueue:1.0.0
 
 ENV DURABILITY_ENGINE="firestore"
 ENV FIRESTORE_CREDENTIALS_FILE="/app/firebase-admin-sdk-service-account-credentials.json"
