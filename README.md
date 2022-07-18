@@ -9,12 +9,9 @@ This is a super simple and not very feature-complete durable queue (dueue).
 ```dockerfile
 FROM tombailey256/dueue:0.2.0
 
-ENV DURABILITY_ENGINE="postgres"
-ENV POSTGRES_HOST="postgres"
-ENV POSTGRES_PORT=5432
-ENV POSTGRES_USER="user"
-ENV POSTGRES_PASSWORD="password"
-ENV POSTGRES_DATABASE="database"
+ENV DURABILITY_ENGINE="firestore"
+ENV FIRESTORE_CREDENTIALS_FILE="/app/firebase-admin-sdk-service-account-credentials.json"
+ENV FIRESTORE_COLLECTION="dueue"
 
 ENV HTTP_PORT = 8080
 ```
@@ -68,19 +65,6 @@ Stores messages using a [Firestore collection](https://firebase.google.com/docs/
 export DURABILITY_ENGINE="firestore"
 export FIRESTORE_CREDENTIALS_FILE="/app/firebase-admin-sdk-service-account-credentials.json"
 export FIRESTORE_COLLECTION="dueue"
-```
-
-### PostgreSQL
-
-Stores messages using a table (named dueue). Configured with the following environment variables:
-
-```sh
-export DURABILITY_ENGINE="postgres"
-export POSTGRES_HOST="postgres"
-export POSTGRES_PORT=5432
-export POSTGRES_USER="user"
-export POSTGRES_PASSWORD="password"
-export POSTGRES_DATABASE="database"
 ```
 
 Note, if the durability engine is unavailable dueue operations (even receive) will fail.
