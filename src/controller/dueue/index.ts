@@ -1,9 +1,9 @@
-import DurabilityEngine, { QueuesMap } from "../../engine"
-import Lock from "../../lock"
-import Message from "../../entity/message"
-import NewMessage from "../../entity/newMessage"
+import DurabilityEngine, { QueuesMap } from "../../engine";
+import Lock from "../../lock";
+import Message from "../../entity/message";
+import NewMessage from "../../entity/newMessage";
 
-import { v4 as uuid } from "uuid"
+import { v4 as uuid } from "uuid";
 
 export default class DueueController {
   private static readonly DEFAULT_ACKNOWLEDGEMENT_MS = 5 * 60 * 1000;
@@ -24,6 +24,7 @@ export default class DueueController {
 
   receiveOne(
     queueName: string,
+    subscriberId: string,
     acknowledgementDeadline: Date = new Date(
       Date.now() + DueueController.DEFAULT_ACKNOWLEDGEMENT_MS
     )
@@ -41,14 +42,21 @@ export default class DueueController {
           }
           messages.splice(index, 1);
         } else if (
-          message.restore === undefined ||
-          message.restore.getTime() <= Date.now()
+          (message.acknowledgements === undefined ||
+            !message.acknowledgements.has(subscriberId)) &&
+          (message.acknowledgementDeadlines === undefined ||
+            (message.acknowledgementDeadlines[subscriberId]?.getTime() ?? 0) <=
+              Date.now())
         ) {
+          const acknowledgementDeadlines = {
+            ...(message.acknowledgementDeadlines ?? {}),
+            [subscriberId]: acknowledgementDeadline,
+          };
           await this.durabilityEngine.updateMessage(queueName, message.id, {
             ...message,
-            restore: acknowledgementDeadline,
+            acknowledgementDeadlines,
           });
-          message.restore = acknowledgementDeadline;
+          message.acknowledgementDeadlines = acknowledgementDeadlines;
           return message;
         }
       }
@@ -73,13 +81,22 @@ export default class DueueController {
     });
   }
 
-  async acknowledgeOne(queueName: string, id: Message["id"]): Promise<void> {
+  async acknowledgeOne(
+    queueName: string,
+    subscriberId: string,
+    messageId: Message["id"]
+  ): Promise<void> {
     await this.lock.acquire(queueName, async () => {
       const messages = this.queuesMap[queueName] ?? [];
-      const messageIndex = messages.findIndex((message) => message.id === id);
-
-      await this.durabilityEngine.deleteMessage(queueName, id);
-      messages.splice(messageIndex, 1);
+      const message = messages.find((message) => message.id === messageId);
+      if (message !== undefined) {
+        const acknowledgements = message.acknowledgements ?? new Set();
+        acknowledgements.add(subscriberId);
+        await this.durabilityEngine.updateMessage(queueName, messageId, {
+          ...message,
+          acknowledgements,
+        });
+      }
     });
   }
 }

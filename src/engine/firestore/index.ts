@@ -1,11 +1,11 @@
-import DurabilityEngine, { QueuesMap } from "../"
+import DurabilityEngine, { QueuesMap } from "../";
 
-import Message from "../../entity/message"
+import Message from "../../entity/message";
 
-import { cert, initializeApp } from "firebase-admin/app"
-import { getFirestore } from "firebase-admin/firestore"
-import { firestore } from "firebase-admin"
-import Firestore = firestore.Firestore
+import { cert, initializeApp } from "firebase-admin/app";
+import { getFirestore } from "firebase-admin/firestore";
+import { firestore } from "firebase-admin";
+import Firestore = firestore.Firestore;
 
 export const FIRESTORE_DURABILITY_ENGINE = "firestore";
 
@@ -22,14 +22,22 @@ class FirestoreDurabilityEngine implements DurabilityEngine {
     const queueDocs = await this.firestore.collection(this.collection).get();
 
     return queueDocs.docs.reduce((queueMap: QueuesMap, document) => {
+      const acknowledgementDeadlines = document.get("acknowledgementDeadlines");
       const message: Message = {
         id: document.id,
         body: document.get("body"),
         expiry: document.get("expiry")
           ? document.get("expiry").toDate()
           : undefined,
-        restore: document.get("restore")
-          ? document.get("restore").toDate()
+        acknowledgementDeadlines: acknowledgementDeadlines
+          ? Object.fromEntries(
+              Object.entries(acknowledgementDeadlines).map(
+                ([key, value]: any) => [key, value.toDate()]
+              )
+            )
+          : undefined,
+        acknowledgements: document.get("acknowledgements")
+          ? new Set(document.get("acknowledgements"))
           : undefined,
       };
       const queue = document.get("queue");
@@ -46,7 +54,10 @@ class FirestoreDurabilityEngine implements DurabilityEngine {
     const data = {
       body: message.body,
       expiry: message.expiry ?? null,
-      restore: message.restore ?? null,
+      acknowledgementDeadlines: message.acknowledgementDeadlines ?? null,
+      acknowledgements: message.acknowledgements
+        ? Array.from(message.acknowledgements)
+        : null,
     };
 
     await this.firestore
@@ -66,7 +77,10 @@ class FirestoreDurabilityEngine implements DurabilityEngine {
     const data = {
       body: message.body,
       expiry: message.expiry ?? null,
-      restore: message.restore ?? null,
+      acknowledgementDeadlines: message.acknowledgementDeadlines ?? null,
+      acknowledgements: message.acknowledgements
+        ? Array.from(message.acknowledgements)
+        : null,
     };
 
     await this.firestore
