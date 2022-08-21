@@ -90,11 +90,14 @@ export default class DueueController {
       const messages = this.queuesMap[queueName] ?? [];
       const message = messages.find((message) => message.id === messageId);
       if (message !== undefined) {
-        const acknowledgements = message.acknowledgements ?? new Set();
-        acknowledgements.add(subscriberId);
+        if (message.acknowledgements === undefined) {
+          message.acknowledgements = new Set([subscriberId]);
+        } else {
+          message.acknowledgements.add(subscriberId);
+        }
         await this.durabilityEngine.updateMessage(queueName, messageId, {
           ...message,
-          acknowledgements,
+          acknowledgements: message.acknowledgements,
         });
       }
     });

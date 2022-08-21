@@ -99,6 +99,38 @@ describe("Test dueue HTTP API", () => {
     expect(receiveAfterExpiryResponse.status).toEqual(404);
   });
 
+  it("should skip acknowledged messages", async () => {
+    const message = "test";
+    const publishResponse = await request(expressApp)
+      .post("/dueue/skip-acknowledged-test")
+      .set("Content-type", "application/json")
+      .send({
+        message,
+      });
+    expect(publishResponse.status).toEqual(204);
+
+    const receiveResponse = await request(expressApp).get(
+      "/dueue/skip-acknowledged-test?acknowledgementDeadline=0&subscriberId=skip-acknowledged-test"
+    );
+    expect(receiveResponse.status).toEqual(200);
+    expect(receiveResponse.body.message).toEqual(message);
+
+    const id = receiveResponse.body.id;
+    expect(id).toBeDefined();
+
+    const acknowledgeResponse = await request(expressApp)
+      .delete(
+        `/dueue/skip-acknowledged-test/${id}?subscriberId=skip-acknowledged-test`
+      )
+      .send();
+    expect(acknowledgeResponse.status).toEqual(204);
+
+    const receiveAfterUnacknowledgedResponse = await request(expressApp).get(
+      "/dueue/skip-acknowledged-test?subscriberId=skip-acknowledged-test"
+    );
+    expect(receiveAfterUnacknowledgedResponse.status).toEqual(404);
+  });
+
   it("should restore unacknowledged messages", async () => {
     const message = "test";
     const publishResponse = await request(expressApp)
