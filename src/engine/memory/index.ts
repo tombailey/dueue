@@ -1,6 +1,6 @@
-import DurabilityEngine, { QueuesMap } from "../"
+import DurabilityEngine, { QueuesMap } from "../";
 
-import Message from "../../entity/message"
+import Message from "../../entity/message";
 
 export const MEMORY_DURABILITY_ENGINE = "memory";
 
@@ -26,7 +26,7 @@ class InMemoryDurabilityEngine implements DurabilityEngine {
   }
 
   getQueues(): QueuesMap | Promise<QueuesMap> {
-    return this.queuesMap;
+    return { ...this.queuesMap };
   }
 
   updateMessage(
