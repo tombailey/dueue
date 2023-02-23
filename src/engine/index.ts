@@ -3,6 +3,9 @@ import getMemoryDurabilityEngine, { MEMORY_DURABILITY_ENGINE } from "./memory";
 import getFirestoreDurabilityEngine, {
   FIRESTORE_DURABILITY_ENGINE,
 } from "./firestore";
+import getSupabaseDurabilityEngine, {
+  SUPABASE_DURABILITY_ENGINE,
+} from "./supabase";
 
 export const DURABILITY_ENGINE = "DURABILITY_ENGINE";
 
@@ -29,6 +32,8 @@ export async function getDurabilityEngine(
       return getFirestoreDurabilityEngine();
     case MEMORY_DURABILITY_ENGINE:
       return getMemoryDurabilityEngine();
+    case SUPABASE_DURABILITY_ENGINE:
+      return getSupabaseDurabilityEngine();
     default:
       throw new Error(`${engine} is not recognized as a DurabilityEngine.`);
   }

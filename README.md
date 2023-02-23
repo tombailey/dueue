@@ -59,7 +59,8 @@ export DURABILITY_ENGINE="memory"
 
 ### Firestore
 
-Stores messages using a [Firestore collection](https://firebase.google.com/docs/firestore/data-model). Configured with the following environment variables:
+Stores messages using a [Firestore collection](https://firebase.google.com/docs/firestore/data-model). Configured with
+the following environment variables:
 
 ```sh
 export DURABILITY_ENGINE="firestore"
@@ -67,11 +68,41 @@ export FIRESTORE_CREDENTIALS_FILE="/app/firebase-admin-sdk-service-account-crede
 export FIRESTORE_COLLECTION="dueue"
 ```
 
+### Supabase
+
+Stores messages using a [Supabase](https://supabase.com/database) table.
+
+A messages table needs to be created and RLS configured manually before supabase can be used:
+
+```sql
+CREATE TABLE dueue_message
+(
+    id                         VARCHAR PRIMARY KEY,
+    queue                      VARCHAR NOT NULL,
+    body                       VARCHAR NOT NULL,
+    expiry                     TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+    "acknowledgementDeadlines" VARCHAR                  DEFAULT NULL,
+    acknowledgements           VARCHAR                  DEFAULT NULL
+);
+```
+
+Configured with the following environment variables:
+
+```sh
+export DURABILITY_ENGINE="supabase"
+# get these from the supabase dashboard
+export SUPABASE_URL="..."
+export SUPABASE_KEY="..."
+
+export SUPABASE_MESSAGE_TABLE="dueue_message"
+```
+
 Note, if the durability engine is unavailable dueue operations (even receive) will fail.
 
 ## Health check
 
-Dueue has a built-in health check endpoint (`/health`) to confirm that it is working correctly. At the moment, it does NOT confirm that the durability engine is working correctly.
+Dueue has a built-in health check endpoint (`/health`) to confirm that it is working correctly. At the moment, it does
+NOT confirm that the durability engine is working correctly.
 
 ## Future work
 
