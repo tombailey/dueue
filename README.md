@@ -2,46 +2,58 @@
 
 ## Introduction
 
-This is a super simple and not very feature-complete durable queue (dueue).
+This is a super simple and not very feature-complete durable message queue (dueue).
 
 ## Getting started
 
 ```dockerfile
-FROM tombailey256/dueue:1.0.3
+FROM tombailey256/dueue:0.0.0
 
-ENV DURABILITY_ENGINE="firestore"
-ENV FIRESTORE_CREDENTIALS_FILE="/app/firebase-admin-sdk-service-account-credentials.json"
-ENV FIRESTORE_COLLECTION="dueue"
-
-ENV HTTP_PORT = 8080
+ENV DURABILITY_ENGINE=postgres
+ENV POSTGRES_USER=user
+ENV POSTGRES_PASSWORD=password
+ENV POSTGRES_DB=database
+ENV POSTGRES_PORT=5432
+ENV HTTP_PORT=8080
 ```
 
-Note that currently, dueue does NOT support horizontal scaling. If you run dueue on more than one node, even with the same durability engine, you will get unexpected results.
+Note that currently, dueue does NOT support horizontal scaling. If you run dueue more than once, even with the same
+durability engine, you will get unexpected results.
 
 ## HTTP API
 
 ### Publish a message
-```text
-$> curl -XPOST localhost/dueue/myQueue -d { "message": "test" }
-204 No Content
+
+```shell
+curl -XPOST localhost:8080/queues/my_queue/messages -d { "value": "example", "expiry": 1450747740 }
+# 200 OK
+# {
+# 	"expiry": 1450747740,
+# 	"id": "94d93556-3126-4aaa-8ddf-f30ee9daf27f",
+# 	"value": "example"
+# }
 ```
 
 ### Receive a message (if one is available)
-```text
-$> curl -XGET localhost/dueue/myQueue
-200 OK
-{
-	"id": "ae41344a-888e-4608-8870-2a4e57b955d6",
-	"message": "test"
-}
+
+```shell
+curl -XGET localhost:8080/queues/my_queue/messages?subscriberId=my_subscriber
+# 200 OK
+# [
+# 	{
+# 		"expiry": 1450747740,
+# 		"id": "94d93556-3126-4aaa-8ddf-f30ee9daf27f",
+# 		"value": "example"
+# 	}
+# ]
 ```
 
-### Acknowledge a message so it can be deleted after it has been processed
-```text
-$> curl -XDELETE localhost/dueue/myQueue/ae41344a-888e-4608-8870-2a4e57b955d6
-204 No content
-```
+### Acknowledge a message after it has been processed
 
+```shell
+curl -XDELETE localhost/dueue/myQueue/94d93556-3126-4aaa-8ddf-f30ee9daf27f
+# 204 No Content
+```
 
 ## Durability
 
@@ -57,47 +69,19 @@ Stores messages in-memory. There is no durability if dueue is restarted or crash
 export DURABILITY_ENGINE="memory"
 ```
 
-### Firestore
+### Postgres
 
-Stores messages using a [Firestore collection](https://firebase.google.com/docs/firestore/data-model). Configured with
-the following environment variables:
-
-```sh
-export DURABILITY_ENGINE="firestore"
-export FIRESTORE_CREDENTIALS_FILE="/app/firebase-admin-sdk-service-account-credentials.json"
-export FIRESTORE_COLLECTION="dueue"
-```
-
-### Supabase
-
-Stores messages using a [Supabase](https://supabase.com/database) table.
-
-A messages table needs to be created and RLS configured manually before supabase can be used:
-
-```sql
-CREATE TABLE dueue_message
-(
-    id                         VARCHAR PRIMARY KEY,
-    queue                      VARCHAR NOT NULL,
-    body                       VARCHAR NOT NULL,
-    expiry                     TIMESTAMP WITH TIME ZONE DEFAULT NULL,
-    "acknowledgementDeadlines" VARCHAR                  DEFAULT NULL,
-    acknowledgements           VARCHAR                  DEFAULT NULL
-);
-```
-
-Configured with the following environment variables:
+Stores messages using a [Postgres](https://www.postgresql.org/).
 
 ```sh
-export DURABILITY_ENGINE="supabase"
-# get these from the supabase dashboard
-export SUPABASE_URL="..."
-export SUPABASE_KEY="..."
-
-export SUPABASE_MESSAGE_TABLE="dueue_message"
+export DURABILITY_ENGINE="postgres"
+export POSTGRES_USER="user"
+export POSTGRES_PASSWORD="password"
+export POSTGRES_DB="database"
+export POSTGRES_PORT="5432"
 ```
 
-Note, if the durability engine is unavailable dueue operations (even receive) will fail.
+Note, if the durability engine is unavailable some dueue operations will fail.
 
 ## Health check
 

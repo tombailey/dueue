@@ -1,21 +1,24 @@
-FROM node:16-alpine as builder
-
-WORKDIR /app/build
-
-COPY package*.json ./
-RUN npm install
-COPY tsconfig.json .
-COPY src /app/build/src
-RUN npm run build
-
-
-
-FROM node:16-alpine
+FROM clux/muslrust:nightly-2023-08-17 AS builder
 
 WORKDIR /app
 
-COPY package*.json ./
-RUN npm ci --only=production --ignore-scripts
-COPY --from=builder /app/build/dist /app/dist
+COPY Cargo.toml Cargo.toml
+COPY Cargo.lock Cargo.lock
+COPY LICENSE LICENSE
 
-CMD [ "npm", "run", "start" ]
+RUN mkdir src && echo "fn main() {}" > src/main.rs
+RUN cargo build --release
+
+ENV TARGET x86_64-unknown-linux-musl
+
+COPY ./src ./src
+RUN cargo build --release
+
+
+
+FROM scratch
+
+WORKDIR /app
+COPY --from=builder /app/target/x86_64-unknown-linux-musl/release/dueue /app/dueue
+
+CMD ["./dueue"]
